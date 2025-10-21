@@ -1,7 +1,22 @@
 # ⚡ Boat Battery & Bilge Monitoring System (ESPHome + ESP32)
 
 **A smart marine monitoring node for real-time battery, bilge, and temperature data**
-Built on **ESPHome**, this system continuously tracks **voltage, current, temperature, and bilge water level**, while a **stainless-steel waterproof latching push button** safely controls main system power.
+Built on **ESPHome**, this system continuously tracks **voltage, current, temperature, and bilge water level**.
+
+The system communicates over Wifi to a remote HomeAssistant instance via a nabu casa webhook and sends JSON data for key parameters.
+The Wifi esphome code has redundancy SSID failover capabilities. I use this for my mobile hotspot when away from marina Wifi.
+The web hook is "protected" by a user generated security token.
+There are 2 main communication paths
+   1.  An interval path that commuicates on a 2 minute window for general updates
+   2.  An alarm path that communicates ASAP with bilge alarm or status information
+I have created various HomeAssistant automation alerts
+   High Water Alert
+   No communications for 30 minutes
+   High temperature alert
+   Battery Low voltage alert
+
+
+   
 
 ---
 

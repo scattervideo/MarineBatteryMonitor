@@ -140,6 +140,7 @@ Boat-Battery-Monitor/
 * Include GPS and motion detection for theft alerts
 * Expand to multi-battery setups (start + house banks)
 * Create dashboard Lovelace card for battery visualization
+* Add Lora or cell data to replace WiFi
 
 ---
 

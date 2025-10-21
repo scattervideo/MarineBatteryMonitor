@@ -1,110 +1,112 @@
 # ⚡ Boat Battery & Bilge Monitoring System (ESPHome + ESP32)
 
-**Real-time battery health and bilge water monitoring system for marine applications**
-Powered by **ESPHome**, this project continuously tracks **battery voltage, current, temperature, Wi-Fi signal, and bilge status**, reporting everything to **Home Assistant** via ESPHome API or HTTP webhooks.
+**A smart marine monitoring node for real-time battery, bilge, and temperature data**
+Built on **ESPHome**, this system continuously tracks **voltage, current, temperature, and bilge water level**, while a **stainless-steel waterproof latching push button** safely controls main system power.
 
 ---
 
 ## 🧩 Overview
 
-This project is designed for boats that need **reliable 12 V/24 V battery monitoring** and **automatic bilge water detection**.
-Built around an **ESP32**, the system measures:
+This project provides a reliable, remotely monitored **boat power management and bilge alert system**.
+It integrates precision current and voltage sensors, waterproof temperature sensing, and Wi-Fi telemetry — all powered by a protected 5 V supply controlled by a rugged stainless-steel **mechanical ON/OFF button**.
 
-| Sensor                        | Function                                                    |
-| :---------------------------- | :---------------------------------------------------------- |
-| **INA226**                    | Measures battery voltage via precision shunt resistor       |
-| **YHDC HSTS016L**             | Measures current draw using a split-core Hall effect sensor |
-| **DS18B20**                   | Measures temperature (inside bilge or ambient cabin)        |
-| **Rule-A-Matic Float Switch** | Detects high-water levels in bilge area                     |
-| **ESP32 Internal Temp**       | Monitors MCU temperature for diagnostics                    |
-
-The system automatically:
-
-* Sends JSON updates to Home Assistant via **Nabu Casa Webhooks**
-* Restarts automatically after Wi-Fi failures or sensor dropouts
-* Logs and transmits alarms when **bilge water is detected**
+When the button is latched **ON**, 5 V flows to the ESP32 and the system boots automatically.
+When toggled **OFF**, it completely disconnects power, ensuring **zero quiescent draw** during storage.
 
 ---
 
 ## ⚙️ Hardware Components
 
-| Component              | Model                            | Function                                    |
-| :--------------------- | :------------------------------- | :------------------------------------------ |
-| **Microcontroller**    | ESP32 Development Board          | Core logic and Wi-Fi communication          |
-| **Voltage Sensor**     | INA226 Voltage/Current Module    | Measures DC voltage and bus voltage         |
-| **Current Sensor**     | YHDC Hall Split-Core HSTS016L    | Measures current draw without direct wiring |
-| **Temperature Sensor** | DS18B20 Waterproof Probe         | Measures environmental or bilge temperature |
-| **Bilge Sensor**       | Rule-A-Matic Plus Float Switch   | Triggers alarm on high water                |
-| **Power Converter**    | PlusRoc DC-DC Step Down (12V→5V) | Powers ESP32 safely from boat battery       |
-
-**Power Supply Example:**
-
-* Input: 12 V or 24 V boat power
-* Output: Regulated 5 V USB feed for ESP32
+| Component              | Model / Type                                          | Function                                                   |
+| :--------------------- | :---------------------------------------------------- | :--------------------------------------------------------- |
+| **Microcontroller**    | ESP32 Development Board                               | Core processor for data collection and Wi-Fi communication |
+| **Voltage Sensor**     | INA226 Voltage/Current Module                         | Measures battery voltage via I²C                           |
+| **Current Sensor**     | YHDC HSTS016L Hall Split-Core                         | Monitors current draw without breaking the circuit         |
+| **Temperature Sensor** | DS18B20 Waterproof Probe                              | Measures temperature (bilge or ambient)                    |
+| **Bilge Sensor**       | Rule-A-Matic Plus Float Switch                        | Detects high-water level in bilge                          |
+| **Power Converter**    | PlusRoc Waterproof 12 V/24 V → 5 V DC-DC Step-Down    | Provides regulated 5 V for ESP32                           |
+| **Power Switch**       | 12 mm Stainless-Steel Latching Waterproof Push Button | Physically switches 5 V power to the ESP32 ON/OFF          |
 
 ---
 
-## 🔌 Wiring Diagram (Summary)
+## 🔌 Power & Wiring Overview
 
-| Connection          | ESP32 Pin                  | Notes                                |
-| :------------------ | :------------------------- | :----------------------------------- |
-| INA226 (Voltage 1)  | SDA = GPIO21, SCL = GPIO22 | I²C Bus A                            |
-| INA226 (Voltage 2)  | SDA = GPIO18, SCL = GPIO4  | I²C Bus B                            |
-| DS18B20 Temperature | GPIO19                     | 1-Wire Bus                           |
-| Bilge Float Switch  | GPIO14                     | Active-Low (with Pull-up)            |
-| Current Sensor      | GPIO33                     | ADC input (voltage from Hall sensor) |
+### ⚡ Power Distribution
 
-Power both sensors and ESP32 from the 5 V regulated output of the **PlusRoc DC-DC module**.
-Add a **common ground** between all components.
+1. **Boat Battery (12 V / 24 V)**
+   Supplies power to the **PlusRoc DC-DC Step-Down Module**.
+
+2. **PlusRoc DC-DC Converter**
+
+   * Input: 12 – 24 V DC
+   * Output: 5 V @ up to 3 A
+   * Feeds the ESP32 and all sensors.
+
+3. **Stainless-Steel Push Button Switch**
+
+   * Wired **inline with the +5 V output** of the DC-DC converter.
+   * When pressed **ON** (latched), 5 V passes to the ESP32 VIN pin.
+   * When pressed **OFF**, the circuit opens and fully powers down the system.
+
+### 🔧 Wiring Summary
+
+| Function                    | ESP32 Pin                    | Description                            |
+| :-------------------------- | :--------------------------- | :------------------------------------- |
+| INA226 #1 (Battery A)       | SDA = GPIO 21, SCL = GPIO 22 | I²C Bus A                              |
+| INA226 #2 (Battery B)       | SDA = GPIO 18, SCL = GPIO 4  | I²C Bus B                              |
+| DS18B20 Temperature         | GPIO 19                      | 1-Wire temperature probe               |
+| Bilge Float Switch          | GPIO 14                      | Active-low digital input with pull-up  |
+| Current Sensor (YHDC)       | GPIO 33                      | Analog voltage proportional to current |
+| GND                         | GND                          | Common ground for all sensors          |
+| **Power Button (Latching)** | **Inline with +5 V**         | **Hardware power switch for ESP32**    |
+
+**Power Path:**
+`Boat Battery (12/24 V)` → `DC-DC 5 V Converter` → `Latching Switch` → `ESP32 VIN`
+
+**Ground Path:**
+All device grounds must be common: converter GND → ESP32 GND → sensor GNDs.
 
 ---
 
-## 💻 Firmware (ESPHome)
+## 🪛 Installation Notes
 
-This project uses a single ESPHome YAML file named:
+* Mount the **stainless-steel button** in a visible, easily accessible location.
+* Add a small hole in the case cover so you can visibly see the ESP32 power LED.
+* Rated at **2 A @ 12 V/24 V DC**, sufficient for the ESP32 and small sensor loads.
+* For marine safety, use **heat-shrink butt connectors** or **waterproof crimp terminals**.
+* Optionally add a **fuse (500 mA–1 A)** between converter and switch for circuit protection.
 
-```
-mercury-engine-battery.yaml
-```
+---
 
-It includes:
+## 💻 Firmware
 
-* INA226 dual-bus voltage monitoring
+The project’s ESPHome configuration (`mercury-engine-battery.yaml`) defines:
+
+* Dual INA226 sensors for battery banks
 * ADC current measurement (Hall effect)
-* Wi-Fi signal and uptime tracking
-* Dallas temperature and internal ESP temperature
-* Automatic HTTP POST updates (every 2 min)
-* Bilge alarm via Nabu Casa webhook
-* Automatic reboot if sensors report invalid readings
-
-⚠️ **Security Note:**
-Replace the following placeholders before flashing:
-
-* `INSERT YOUR WEBHOOK` → your Nabu Casa webhook URL
-* `INSERT YOUR SECURITY TOKEN _ MAKE IT UP` → any unique token string
+* DS18B20 and ESP internal temperature
+* Bilge float-switch alerting via webhook
+* Self-healing Wi-Fi with automatic reboot
+* Periodic HTTP POST telemetry to Nabu Casa or other endpoints
 
 ---
 
-## 🌐 Home Assistant Integration
+## 🌐 Integration with Home Assistant
 
-The device can be added in two ways:
+When powered ON, the ESP32 connects automatically to Wi-Fi and exposes all sensors via ESPHome or HTTP JSON webhooks.
 
-1. **ESPHome Native API** – auto-discovered in Home Assistant
-2. **HTTP Webhook** – sends structured JSON data for cloud or remote dashboards
-
-**Example JSON Payload:**
+Example webhook payload:
 
 ```json
 {
-  "voltage": "12.64",
-  "current": "2.47",
-  "voltage2": "12.62",
-  "temp": "71.3",
-  "wifi": "DockNetwork",
-  "wifirssi": "-62",
+  "voltage": "12.63",
+  "current": "1.84",
+  "voltage2": "12.61",
+  "temp": "70.8",
   "bilgealarm": "OFF",
-  "esptemp": "97.4",
-  "token": "YOURTOKEN123"
+  "wifi": "DockNetwork",
+  "wifirssi": "-61",
+  "esptemp": "95.4"
 }
 ```
 
@@ -112,13 +114,22 @@ The device can be added in two ways:
 
 ## 🧠 Features
 
-✅ Dual-channel voltage sensing (INA226)
-✅ Live current measurement with Hall effect isolation
-✅ Temperature and humidity protection (waterproof probe)
-✅ Bilge high-water detection with alarm webhook
-✅ Self-healing Wi-Fi recovery and watchdog reboot
-✅ OTA updates via ESPHome Dashboard
-✅ Full compatibility with **Home Assistant**, **Node-RED**, and **MQTT bridges**
+✅ Dual-channel voltage and current monitoring
+✅ Waterproof temperature probe
+✅ Bilge high-water alarm
+✅ Complete power isolation via stainless-steel latching button
+✅ Automatic recovery from Wi-Fi faults
+✅ OTA updates through ESPHome Dashboard
+✅ Seamless Home Assistant integration
+
+---
+
+## 🧭 Safety & Best Practices
+
+* Always disconnect boat power before wiring.
+* Ensure the switch’s **12 V/24 V rating** matches your converter output.
+* Use tinned marine wire and waterproof connectors.
+* Add a small inline fuse to protect against short circuits.
 
 ---
 
@@ -127,8 +138,8 @@ The device can be added in two ways:
 ```
 Boat-Battery-Monitor/
 │
-├── mercury-engine-battery.yaml      # ESPHome configuration
-├── README.md                        # Project overview and documentation
+├── mercury-engine-battery.yaml      # ESPHome configuration file
+├── README.md                        # Documentation and wiring overview
 └── /images/                         # Wiring diagrams and photos (optional)
 ```
 
@@ -136,21 +147,18 @@ Boat-Battery-Monitor/
 
 ## 📸 Future Enhancements
 
-* Add solar charging telemetry (CN3791 or TP4056)
-* Include GPS and motion detection for theft alerts
-* Expand to multi-battery setups (start + house banks)
-* Create dashboard Lovelace card for battery visualization
-* Add Lora or cell data to replace WiFi
+* Add solar-charging telemetry (CN3791 / TP4056)
+* Add relay control for automatic bilge pump test
+* Expand for dual-battery isolation management
+* Optional OLED display for local voltage readout
 
 ---
 
 ## 🧭 Author
 
 **Created by:** Paul Goldstein
-**Organization:** ThrillFishing Technologies
+**Organization:** ThrillFishing
 **Website:** [ThrillFishing.com](https://ThrillFishing.com)
 **License:** MIT
 
 ---
-
-Would you like me to generate a **formatted GitHub repository description** (title, topics, and short summary for the sidebar) or also include a **diagram image** (ESP32 pinout + wiring layout) in SVG/PNG for the `/images` folder?

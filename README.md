@@ -3,20 +3,44 @@
 **A smart marine monitoring node for real-time battery, bilge, and temperature data**
 Built on **ESPHome**, this system continuously tracks **voltage, current, temperature, and bilge water level**.
 
-The system communicates over Wifi to a remote HomeAssistant instance via a nabu casa webhook and sends JSON data for key parameters.
-The Wifi esphome code has redundancy SSID failover capabilities. I use this for my mobile hotspot when away from marina Wifi.
-The web hook is "protected" by a user generated security token.
-There are 2 main communication paths
-   1.  An interval path that commuicates on a 2 minute window for general updates
-   2.  An alarm path that communicates ASAP with bilge alarm or status information
-I have created various HomeAssistant automation alerts
-   High Water Alert
-   No communications for 30 minutes
-   High temperature alert
-   Battery Low voltage alert
+## 🌐 System Communication Overview
 
+The system communicates over **Wi-Fi** to a remote **Home Assistant** instance via a **Nabu Casa webhook**, sending JSON data for key parameters.  
 
-   
+- The Wi-Fi ESPHome code includes **redundant SSID failover capabilities**.  
+  - This allows seamless switching between **marina Wi-Fi** and a **mobile hotspot** when away.  
+- The webhook is protected by a **user-generated security token** for secure communication.  
+
+### 🔄 Communication Paths
+
+There are two main data transmission paths:
+
+1. **Interval Path** – Communicates every **2 minutes** for regular status updates.  
+2. **Alarm Path** – Communicates **immediately** for urgent events (e.g., bilge alarm or fault status).  
+
+### 🚨 Important Home Assistant Automation Alerts
+
+The following automations provide critical safety and diagnostic alerts:
+
+- ⚠️ **High Water Alert** – Bilge float switch triggered  
+- 🕒 **No Communication for 30 Minutes** – Possible Wi-Fi loss or device failure  
+- 🌡️ **High Temperature Alert** – Abnormal temperature rise detected  
+- 🔋 **Low Battery Voltage Alert** – Voltage drop below safe operating range  
+
+---
+
+## 🧱 3D Printing Instructions
+
+1. **Import the model** into your slicer (e.g., *PrusaSlicer*, *Cura*, *Bambu Studio*).  
+2. Once loaded, **right-click** the model and choose **“Separate”** or **“Break Apart Parts.”**  
+   - This allows you to print the **top cover**, **base**, and **mounting plate** individually.  
+   - Each part can then be **positioned flat** on the bed for best adhesion and surface quality.  
+3. Verify that each part is oriented correctly and scaled to **100%** before slicing.  
+4. Use **supports only where needed** (around screw posts or overhangs).  
+5. **Recommended settings:**
+   - Layer height: `0.2 mm`  
+   - Infill: `20–30%`  
+   - Material: **PETG** or **ASA** for marine durability and UV resistance.  
 
 ---
 
@@ -62,6 +86,7 @@ When toggled **OFF**, it completely disconnects power, ensuring **zero quiescent
    * Wired **inline with the +5 V output** of the DC-DC converter.
    * When pressed **ON** (latched), 5 V passes to the ESP32 VIN pin.
    * When pressed **OFF**, the circuit opens and fully powers down the system.
+   * Add a small hole in printed case cover to see ESP32 power LED.
 
 ### 🔧 Wiring Summary
 

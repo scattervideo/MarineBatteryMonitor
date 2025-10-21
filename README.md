@@ -3,6 +3,11 @@
 **A smart marine monitoring node for real-time battery, bilge, and temperature data**
 Built on **ESPHome**, this system continuously tracks **voltage, current, temperature, and bilge water level**.
 
+> 📰 **Learn more:**  
+> See the full build guide on [ThrillFishing.com – “Never Get Stranded Again: Building the ThrillFishing Battery Monitor”](https://thrillfishing.com/never-get-stranded-again-building-the-thrillfishing-battery-monitor/)
+
+---
+
 ## 🌐 System Communication Overview
 
 The system communicates over **Wi-Fi** to a remote **Home Assistant** instance via a **Nabu Casa webhook**, sending JSON data for key parameters.  

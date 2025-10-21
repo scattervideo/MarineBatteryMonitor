@@ -1,0 +1,56 @@
+Input Helpers to support SOC calculations
+
+input_number.thrillfishing_soc_coulomb
+input_number.thrillfishing_current_soc
+input_number.thrillfishing_accumulated_energy
+
+
+Name: sensor.battery_power
+template:
+{% set voltage = states('input_number.thrillfishing_voltage') | float %}
+{% set current = states('input_number.thrillfishing_current') | float %}
+{{ (voltage * current) | round(2) }}
+
+Name: sensor.battery_energy_delta
+template:
+{% set power = states('sensor.battery_power') | float %}
+{% set efficiency = 1.0 %}
+{% if power > 0 %}
+  {% set efficiency = states('input_number.thrillfishing_charging_efficiency') | float / 100 %}
+{% elif power < 0 %}
+  {% set efficiency = 1 / (states('input_number.thrillfishing_discharging_efficiency') | float / 100) %}
+{% endif %}
+{{ (power * efficiency) | round(2) }}
+
+
+Name: sensor.battery_soc_voltage_based
+template:
+{% set voltage = states('input_number.thrillfishing_voltage') | float %}
+{% set min_voltage = states('input_number.thrillfishing_min_voltage') | float %}
+{% set max_voltage = states('input_number.thrillfishing_max_voltage') | float %}
+{% if voltage > 0 and min_voltage > 0 and max_voltage > min_voltage %}
+  {% set soc = ((voltage - min_voltage) / (max_voltage - min_voltage)) * 100 %}
+  {{ [0, [soc, 100] | min] | max | round(1) }}
+{% else %}
+  0
+{% endif %}
+
+Name: Battery State of Charge
+Device Class: Battery
+Unit of Measurement: %
+template:
+{% set voltage_soc = states('sensor.battery_soc_voltage_based') | float %}
+{% set coulomb_soc = states('input_number.thrillfishing_soc_coulomb') | float %}
+{% set voltage = states('input_number.thrillfishing_voltage') | float %}
+{% set min_v = states('input_number.thrillfishing_min_voltage') | float %}
+{% set max_v = states('input_number.thrillfishing_max_voltage') | float %}
+
+{# Use voltage-based when at extremes, coulomb counting in middle range #}
+{% if voltage <= min_v * 1.05 %}
+  {{ voltage_soc }}
+{% elif voltage >= max_v * 0.95 %}
+  {{ voltage_soc }}
+{% else %}
+  {# Weight coulomb counting more in the middle range #}
+  {{ (coulomb_soc * 0.7 + voltage_soc * 0.3) | round(1) }}
+{% endif %}

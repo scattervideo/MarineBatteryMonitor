@@ -1,6 +1,6 @@
 # ESPHome configuration for monitoring a boat's battery and environmental conditions
 esphome:  
-  name: "mercury-engine-battery"  
+  name: "marine-monitor"  
   friendly_name: battery-esp32
   # Minimum required ESPHome version for compatibility
   min_version: 2024.11.0

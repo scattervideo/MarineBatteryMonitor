@@ -191,6 +191,7 @@ Boat-Battery-Monitor/
 * Add relay control for automatic bilge pump test
 * Expand for dual-battery isolation management
 * Optional OLED display for local voltage readout
+* LoRa or cell data communications where WiFI isn't available.
 
 ---
 
